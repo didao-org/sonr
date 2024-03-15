@@ -3,11 +3,13 @@ dotenv:
   - .env
 
 includes:
-  build: ./.taskfiles/Build.yml
-  deploy: ./.taskfiles/Deploy.yml
-  gen: ./.taskfiles/Gen.yml
-  release: ./.taskfiles/Release.yml
-  test: ./.taskfiles/Test.yml
+  build: .taskfiles/Build.yml
+  compose: .taskfiles/Compose.yml
+  docker: .taskfiles/Docker.yml
+  deploy: .taskfiles/Deploy.yml
+  gen: .taskfiles/Gen.yml
+  release: .taskfiles/Release.yml
+  test: .taskfiles/Test.yml
 
 tasks:
   install:
@@ -20,21 +22,24 @@ tasks:
       - go install github.com/a-h/templ/cmd/templ@latest
       - go install github.com/go-task/task/v3/cmd/task@latest
 
-  compose-up:
-    cmds:
-      - task: compose-down
-      - templ generate
-      - task: build:current
-      - docker compose -f ./deploy/testnet/docker-compose.local.yml up --abort-on-container-exit
-
-  compose-down:
-    ignore_error: true
-    cmds:
-      - docker compose -f ./deploy/testnet/docker-compose.local.yml down
-
-  dev:
+  dev:hway:
     desc: "Start development server"
-    cmd: air -c ./deploy/air.toml
+    cmds:
+      - task: build
+      - air -c ./deploy/air.hway.toml
+
+  dev:node:
+    desc: "Start development server"
+    cmds:
+      - task: build
+      - air -c ./deploy/air.node.toml
+
+  build:
+    desc: "Build the project"
+    cmds:
+      - task: gen:prisma
+      - task: docker:sonrd
+      - task: docker:hway
 
   generate:
     desc: "Generate Templ and Proto files"
@@ -47,3 +52,8 @@ tasks:
     desc: "Run essential tests"
     cmds:
       - task: test
+
+  release-gcp:
+    desc: "Release the docker images"
+    cmds:
+      - task: build
